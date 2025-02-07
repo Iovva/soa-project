@@ -1,0 +1,52 @@
+services:
+  auth-api: #authentication service
+    container_name: auth-api
+    build:
+      dockerfile: authservice/Dockerfile
+      context: .
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_KEY=${JWT_KEY}
+
+  nginx: #load balancer using nginx
+    container_name: nginx
+    build:
+      dockerfile: Dockerfile
+      context: nginx
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-api
+      - concerts-api
+
+  database: #database for everything
+    container_name: database
+    image: mongo:7.0
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+      - MONGO_INITDB_DATABASE=database
+
+  concerts-api: #concerts service
+    container_name: concerts-api
+    build:
+      dockerfile: concerts-service/Dockerfile
+      context: .
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+
+  frontend:
+    container_name: frontend-service
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+
+volumes:
+  rabbitmq_data:
+
